@@ -1,14 +1,21 @@
 const nodemailer = require('nodemailer');
 
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
+function getTransporter() {
+  if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+    throw new Error('Email is not configured. Set EMAIL_USER and EMAIL_PASS in backend/.env.');
+  }
+
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+}
 
 async function sendBookingConfirmation({ bookerName, bookerEmail, eventTitle, startTime, endTime, hostEmail }) {
+  const transporter = getTransporter();
   const dateStr = new Date(startTime).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'full', timeStyle: 'short' });
   const endStr = new Date(endTime).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', timeStyle: 'short' });
 

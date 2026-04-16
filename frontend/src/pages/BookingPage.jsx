@@ -14,7 +14,9 @@ export default function BookingPage() {
   const [step, setStep] = useState('calendar'); // 'calendar' | 'time' | 'form'
   const [form, setForm] = useState({ name: '', email: '', notes: '' });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [slotError, setSlotError] = useState('');
+  const [bookingError, setBookingError] = useState('');
 
   const today = startOfDay(new Date());
   const days = eachDayOfInterval({
@@ -25,11 +27,21 @@ export default function BookingPage() {
 
   const handleDateSelect = async (date) => {
     setSelectedDate(date);
+    setSelectedSlot(null);
+    setSlotError('');
+    setSlots([]);
+    setSlotsLoading(true);
     const dateStr = format(date, 'yyyy-MM-dd');
-    const res = await getSlots(username, slug, dateStr);
-    setEventType(res.data.eventType);
-    setSlots(res.data.slots);
-    setStep('time');
+    try {
+      const res = await getSlots(username, slug, dateStr);
+      setEventType(res.data.eventType);
+      setSlots(res.data.slots);
+      setStep('time');
+    } catch (err) {
+      setSlotError(err.response?.data?.error || 'Unable to load available times for this date.');
+    } finally {
+      setSlotsLoading(false);
+    }
   };
 
   const handleSlotSelect = (slot) => {
@@ -39,7 +51,8 @@ export default function BookingPage() {
 
   const handleBook = async (e) => {
     e.preventDefault();
-    setLoading(true); setError('');
+    setLoading(true);
+    setBookingError('');
     try {
       const dateStr = format(selectedDate, 'yyyy-MM-dd');
       const [h, m] = selectedSlot.split(':');
@@ -58,7 +71,7 @@ export default function BookingPage() {
         state: { name: form.name, event: eventType.title, date: dateStr, time: selectedSlot }
       });
     } catch (err) {
-      setError(err.response?.data?.error || 'Booking failed. Please try again.');
+      setBookingError(err.response?.data?.error || 'Booking failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -132,6 +145,11 @@ export default function BookingPage() {
                   );
                 })}
               </div>
+              {slotError && (
+                <p style={{ color: 'var(--danger)', fontSize: 13, marginTop: 16 }}>
+                  {slotError}
+                </p>
+              )}
             </div>
           )}
 
@@ -143,7 +161,15 @@ export default function BookingPage() {
               <h3 style={{ fontWeight: 600, marginBottom: 16 }}>
                 {selectedDate && format(selectedDate, 'EEEE, MMMM d')}
               </h3>
-              {slots.length === 0 ? (
+              {slotsLoading ? (
+                <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '20px 0' }}>
+                  Loading available times...
+                </p>
+              ) : slotError ? (
+                <p style={{ color: 'var(--danger)', textAlign: 'center', padding: '20px 0' }}>
+                  {slotError}
+                </p>
+              ) : slots.length === 0 ? (
                 <p style={{ color: 'var(--text-muted)', textAlign: 'center', padding: '20px 0' }}>
                   No available slots on this day.
                 </p>
@@ -189,7 +215,7 @@ export default function BookingPage() {
                   <label>Additional notes</label>
                   <textarea value={form.notes} onChange={e => setForm(f => ({ ...f, notes: e.target.value }))} rows={3} placeholder="Anything you'd like to share..." />
                 </div>
-                {error && <p style={{ color: 'var(--danger)', marginBottom: 12, fontSize: 13 }}>{error}</p>}
+                {bookingError && <p style={{ color: 'var(--danger)', marginBottom: 12, fontSize: 13 }}>{bookingError}</p>}
                 <button type="submit" className="btn-primary" disabled={loading} style={{ width: '100%', padding: 12 }}>
                   {loading ? 'Confirming...' : 'Confirm Booking'}
                 </button>

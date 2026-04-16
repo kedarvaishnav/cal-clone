@@ -15,7 +15,7 @@ function EventTypeModal({ initial, onSave, onClose }) {
       await onSave(form);
       onClose();
     } catch (err) {
-      setError(err.response?.data?.error || 'Something went wrong');
+      setError(err.response?.data?.error || err.message || 'Something went wrong');
     } finally {
       setLoading(false);
     }

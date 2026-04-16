@@ -1,4 +1,6 @@
+import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
+import { getEventTypes } from '../api';
 
 const mainLinks = [
   { to: '/event-types', icon: '⚡', label: 'Event Types' },
@@ -11,6 +13,30 @@ const bottomLinks = [
 ];
 
 export default function Sidebar() {
+  const [publicSlug, setPublicSlug] = useState('');
+
+  useEffect(() => {
+    let ignore = false;
+
+    getEventTypes()
+      .then((res) => {
+        if (!ignore) {
+          setPublicSlug(res.data[0]?.slug || '');
+        }
+      })
+      .catch(() => {
+        if (!ignore) {
+          setPublicSlug('');
+        }
+      });
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  const publicPageUrl = publicSlug ? `/johndoe/${publicSlug}` : '/event-types';
+
   return (
     <aside style={{
       width: 240, minHeight: '100vh',
@@ -67,7 +93,7 @@ export default function Sidebar() {
       <div style={{ padding: '12px', borderTop: '1px solid var(--border)' }}>
 
         {/* View Public Page */}
-        <a href="/johndoe/30min" target="_blank" rel="noreferrer" style={{
+        <a href={publicPageUrl} target="_blank" rel="noreferrer" style={{
           display: 'flex', alignItems: 'center', gap: 10,
           padding: '8px 12px', borderRadius: 8, marginBottom: 2,
           color: 'var(--text-muted)', fontSize: 14,
@@ -82,7 +108,11 @@ export default function Sidebar() {
 
         {/* Copy Public Link */}
         <button onClick={() => {
-          navigator.clipboard.writeText(`${window.location.origin}/johndoe/30min`);
+          if (!publicSlug) {
+            alert('Create an event type first.');
+            return;
+          }
+          navigator.clipboard.writeText(`${window.location.origin}/johndoe/${publicSlug}`);
           alert('Link copied!');
         }} style={{
           display: 'flex', alignItems: 'center', gap: 10,

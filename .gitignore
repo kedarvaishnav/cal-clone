@@ -1,3 +1,12 @@
 node_modules/
-.env
 dist/
+
+# Ignore env files in the repo, including app subfolders.
+.env
+.env.*
+**/.env
+**/.env.*
+
+# Allow checked-in examples if you add them later.
+!.env.example
+!**/.env.example
