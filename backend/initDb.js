@@ -6,8 +6,8 @@ const DEFAULT_USER = {
   id: 1,
   name: 'John Doe',
   username: 'johndoe',
-  email: 'john@example.com',
-  timezone: 'Asia/Kolkata'
+  email: process.env.DEFAULT_HOST_EMAIL || process.env.EMAIL_USER || 'johndoe@example.com',
+  timezone: 'Asia/Kolkata',
 };
 
 const DEFAULT_AVAILABILITY = [
@@ -27,7 +27,11 @@ async function initDb() {
   await db.query(
     `INSERT INTO users (id, name, username, email, timezone)
      VALUES ($1, $2, $3, $4, $5)
-     ON CONFLICT (id) DO NOTHING`,
+     ON CONFLICT (id) DO UPDATE
+     SET name = EXCLUDED.name,
+         username = EXCLUDED.username,
+         email = EXCLUDED.email,
+         timezone = EXCLUDED.timezone`,
     [
       DEFAULT_USER.id,
       DEFAULT_USER.name,
