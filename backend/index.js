@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 
 const eventTypesRouter = require('./routes/eventTypes');
@@ -9,6 +10,7 @@ const initDb = require('./initDb');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const frontendDistPath = path.join(__dirname, '..', 'frontend', 'dist');
 
 app.use(cors());
 app.use(express.json());
@@ -110,6 +112,16 @@ app.get('/test-db', async (req, res) => {
     console.error(err);
     res.status(500).send("DB FAILED");
   }
+});
+
+app.use(express.static(frontendDistPath));
+
+app.get(/.*/, (req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    return next();
+  }
+
+  res.sendFile(path.join(frontendDistPath, 'index.html'));
 });
 
 initDb()
